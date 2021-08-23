@@ -13,17 +13,22 @@ interface LambdaFunction<I, O> : RequestStreamHandler {
     }
     
     fun handle(input: String, context: Context): String {
-        val request = runCatching { decode(input, context) }.getOrElse { exception ->
-            val output = onDecodingFailure(exception, input, context)
-            return encode(output, context)
-        }
-        
-        val response = runCatching { process(request, context) }.getOrElse { exception ->
-            val output = onProcessingFailure(exception, request, context)
-            return encode(output, context)
-        }
-        
-        return encode(response, context)
+        return runCatching { decode(input, context) }
+            .recover { exception ->
+                val output = onFailure(exception, context)
+                return encode(output, context)
+            }
+            .mapCatching { request -> process(request, context) }
+            .recover { exception ->
+                val output = onFailure(exception, context)
+                return encode(output, context)
+            }
+            .mapCatching { response -> encode(response, context) }
+            .recover { exception ->
+                val output = onFailure(exception, context)
+                return encode(output, context)
+            }
+            .getOrThrow()
     }
     
     fun decode(input: String, context: Context): I
@@ -32,11 +37,7 @@ interface LambdaFunction<I, O> : RequestStreamHandler {
     
     fun encode(output: O, context: Context): String
     
-    fun onDecodingFailure(exception: Throwable, input: String, context: Context): O {
-        throw NotImplementedError()
-    }
-    
-    fun onProcessingFailure(exception: Throwable, request: I, context: Context): O {
+    fun onFailure(exception: Throwable, context: Context): O {
         throw NotImplementedError()
     }
 }
