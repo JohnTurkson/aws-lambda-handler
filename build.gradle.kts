@@ -1,11 +1,12 @@
 plugins {
     kotlin("jvm") version "1.5.30"
+    kotlin("plugin.serialization") version "1.5.30"
     `java-library`
     `maven-publish`
 }
 
 group = "com.johnturkson.aws"
-version = "0.0.3"
+version = "0.0.4"
 
 repositories {
     mavenCentral()
@@ -13,6 +14,7 @@ repositories {
 
 dependencies {
     implementation(kotlin("stdlib"))
+    api("org.jetbrains.kotlinx:kotlinx-serialization-json:1.2.2")
     api("com.amazonaws:aws-lambda-java-core:1.2.1")
 }
 
