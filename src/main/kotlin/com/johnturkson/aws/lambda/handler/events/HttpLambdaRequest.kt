@@ -1,17 +1,18 @@
 package com.johnturkson.aws.lambda.handler.events
 
+import com.johnturkson.aws.lambda.handler.events.serializers.HttpLambdaRequestSerializer
 import kotlinx.serialization.Serializable
 
-@Serializable
-data class HttpLambdaRequest(
+@Serializable(HttpLambdaRequestSerializer::class)
+data class HttpLambdaRequest<T>(
     val version: String,
     val routeKey: String,
     val rawPath: String,
     val rawQueryString: String,
     val headers: Map<String, String>,
     val requestContext: RequestContext,
-    val body: String,
     val isBase64Encoded: Boolean,
+    val body: T,
 ) {
     @Serializable
     data class RequestContext(

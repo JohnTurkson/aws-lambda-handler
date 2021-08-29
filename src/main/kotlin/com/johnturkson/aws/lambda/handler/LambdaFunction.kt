@@ -8,18 +8,18 @@ import kotlinx.serialization.json.Json
 import java.io.InputStream
 import java.io.OutputStream
 
-abstract class LambdaFunction<I, O>(
-    protected val serializer: Json,
-    private val decoder: DeserializationStrategy<I>,
-    private val encoder: SerializationStrategy<O>,
-) : RequestStreamHandler {
+interface LambdaFunction<I, O> : RequestStreamHandler {
+    val serializer: Json
+    val decoder: DeserializationStrategy<I>
+    val encoder: SerializationStrategy<O>
+    
     override fun handleRequest(input: InputStream, output: OutputStream, context: Context) {
         val request = input.bufferedReader().use { reader -> reader.readText() }
         val response = handle(request, context)
         output.bufferedWriter().use { writer -> writer.write(response) }
     }
     
-    open fun handle(input: String, context: Context): String {
+    fun handle(input: String, context: Context): String {
         return runCatching { decode(input, context) }
             .recover { exception ->
                 val output = onFailure(exception, context)
@@ -38,17 +38,17 @@ abstract class LambdaFunction<I, O>(
             .getOrThrow()
     }
     
-    open fun decode(input: String, context: Context): I {
+    fun decode(input: String, context: Context): I {
         return serializer.decodeFromString(decoder, input)
     }
     
-    abstract fun process(request: I, context: Context): O
+    fun process(request: I, context: Context): O
     
-    open fun encode(output: O, context: Context): String {
+    fun encode(output: O, context: Context): String {
         return serializer.encodeToString(encoder, output)
     }
     
-    open fun onFailure(exception: Throwable, context: Context): O {
+    fun onFailure(exception: Throwable, context: Context): O {
         throw NotImplementedError()
     }
 }
